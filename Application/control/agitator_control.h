@@ -26,7 +26,7 @@ extern "C" {
   void agitator_handle_command(uint8_t *frame, uint16_t len);
   uint8_t agitator_start(uint32_t duration_ms);
   void agitator_stop(void);
-  void agitator_get_status(uint8_t *running, uint8_t *sys_state);
+  void agitator_get_status(uint8_t *running, uint8_t *sys_state, uint8_t *error_code);
 
 #ifdef __cplusplus
 }

@@ -25,7 +25,7 @@
 #include "agitator_control.h"
 #include "comm_handler.h"
 #include "pump_control.h"
-// #include "system_commands.h"
+#include "system_command.h"
 
 /* USER CODE END Includes */
 
@@ -94,7 +94,7 @@ int main(void) {
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 2 */
   comm_init();
-  // pump_init();
+  pump_init();
   agitator_init();
   // system_init();
 
@@ -105,7 +105,7 @@ int main(void) {
   while (1) {
     /* USER CODE END WHILE */
     comm_process_frames();
-    // pump_task();
+    pump_task();
     agitator_task();
     HAL_Delay(10);
     /* USER CODE BEGIN 3 */

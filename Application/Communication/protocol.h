@@ -52,9 +52,9 @@ BUFFER SIZE
   ============================
    */
 
-#define CMD_SYS_STATUS 0x30    /**< Query system status */
-#define CMD_SYS_PARAM 0x31     /**< Set system parameters */
-#define CMD_SYS_EMERGENCY 0x32 /**< Emergency stop all */
+#define CMD_SYSTEM_STATUS 0x30    /**< Query system status */
+#define CMD_SYSTEM_RESET 0x31     /**< Set system parameters */
+#define CMD_EMERGENCY_STOP 0x32 /**< Emergency stop all */
 
 /**
 ============================
@@ -90,8 +90,9 @@ MOTOR DEFINITIONS
 #define MOTOR_ID_2 0x02
 #define MOTOR_ID_3 0x03
 
-#define MOTOR_VOLUME_ML 10
+#define MIN_VOLUME_ML 10
 #define MAX_VOLUME_ML 500
+
 
 #define MIN_AGIT_DURATION 100 // it nhat 0.1s
 #define MAX_AGIT_DURATION 600000 // nhieu nhat 10p

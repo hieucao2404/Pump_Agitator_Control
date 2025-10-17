@@ -3,7 +3,7 @@
 #include "protocol.h"
 #include "pump_control.h"
 
-// #include "system_commands.h"
+ #include "system_command.h"
 #include "usbd_cdc_if.h"
 #include <stdint.h>
 #include <string.h>
@@ -170,11 +170,11 @@ void comm_process_frames(void) {
   // Check what this command will execute
 
   if (cmd >= 0x10 && cmd <= 0x1F) {
-    // pump_handle_command(rx_buffer, frame_len);
+     pump_handle_command(rx_buffer, frame_len);
   } else if (cmd >= 0x20 && cmd <= 0x2F) {
     agitator_handle_command(rx_buffer, frame_len);
   } else if (cmd >= 0x30 && cmd <= 0x3F) {
-    // system_handle_command(rx_buffer, frame_len);
+     system_handle_command(rx_buffer, frame_len);
   }
 
   memmove(rx_buffer, rx_buffer + frame_len, rx_index - frame_len);

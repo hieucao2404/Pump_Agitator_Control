@@ -1,6 +1,7 @@
 #include "agitator_control.h"
 #include "comm_handler.h"
 #include "protocol.h"
+#include "stm32f1xx.h"
 #include "stm32f1xx_hal.h"
 #include "stm32f1xx_hal_gpio.h"
 #include <stdint.h>
@@ -12,6 +13,7 @@
 // Private variables
 static AgitatorState_t agitator = {0};
 static uint8_t system_state = SYS_STATE_STANDBY;
+static uint8_t error_code = ERR_NONE;
 
 // hard ware control fucntion
 static void agitator_hardware_on(void) {
@@ -33,6 +35,7 @@ void agitator_init(void) {
   // set off before do anything
   agitator_hardware_off();
   system_state = SYS_STATE_STANDBY;
+  error_code = ERR_NONE;
 }
 
 /* Xu li tac vu cua may khuya*/
@@ -63,14 +66,18 @@ void agitator_task(void) {
 // start agitator
 uint8_t agitator_start(uint32_t duration_ms) {
   // gioi han thoi gian chay cua may khuya (min and max)
-  if (duration_ms < MIN_AGIT_DURATION || duration_ms > MAX_AGIT_DURATION)
-    return 0;
+   if (duration_ms < MIN_AGIT_DURATION || duration_ms > MAX_AGIT_DURATION) {
+        error_code = ERR_INVALID_PARAM; 
+        return 0;
+    }
 
-  if (agitator.running)
-    return 0;
+  if (agitator.running){
+    error_code = ERR_SYSTEM_BUSY;
+    return 0;}
 
   agitator.requested_duration = duration_ms;
   agitator.start_requested = 1;
+  error_code = ERR_NONE;
 
   return 1;
 }
@@ -83,9 +90,10 @@ void agitator_stop(void) {
 }
 
 // get status
-void agitator_get_status(uint8_t *running, uint8_t *sys_state) {
+void agitator_get_status(uint8_t *running, uint8_t *sys_state, uint8_t *error_code_out) {
   *running = agitator.running ? 0x01 : 0x00;
   *sys_state = system_state;
+  *error_code_out = error_code;
 }
 
 // handle commands
@@ -100,10 +108,10 @@ void agitator_handle_command(uint8_t *frame, uint16_t len) {
   switch (cmd) {
   case CMD_AGIT_STATUS: // 0x20
     if (inst == INST_QUERY) {
-      uint8_t running, state;
-      agitator_get_status(&running, &state);
+      uint8_t running, state, err;
+      agitator_get_status(&running, &state, &err);
 
-      uint8_t data[2] = {running, state};
+      uint8_t data[3] = {running, state, err};
       resp_len =
           protocol_build_frame(CMD_AGIT_STATUS, INST_QUERY, data, 2, response);
       comm_send_response(response, resp_len);
