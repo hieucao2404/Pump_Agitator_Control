@@ -67,13 +67,14 @@ void agitator_task(void) {
 uint8_t agitator_start(uint32_t duration_ms) {
   // // gioi han thoi gian chay cua may khuya (min and max)
   //  if (duration_ms < MIN_AGIT_DURATION || duration_ms > MAX_AGIT_DURATION) {
-  //       error_code = ERR_INVALID_PARAM; 
+  //       error_code = ERR_INVALID_PARAM;
   //       return 0;
   //   }
 
-  if (agitator.running){
+  if (agitator.running) {
     error_code = ERR_SYSTEM_BUSY;
-    return 0;}
+    return 0;
+  }
 
   agitator.requested_duration = duration_ms;
   agitator.start_requested = 1;
@@ -90,7 +91,8 @@ void agitator_stop(void) {
 }
 
 // get status
-void agitator_get_status(uint8_t *running, uint8_t *sys_state, uint8_t *error_code_out) {
+void agitator_get_status(uint8_t *running, uint8_t *sys_state,
+                         uint8_t *error_code_out) {
   *running = agitator.running ? 0x01 : 0x00;
   *sys_state = system_state;
   *error_code_out = error_code;
@@ -99,50 +101,54 @@ void agitator_get_status(uint8_t *running, uint8_t *sys_state, uint8_t *error_co
 // handle commands
 void agitator_handle_command(uint8_t *frame, uint16_t len) {
 
-
   uint8_t cmd = frame[0];
-  uint8_t inst = frame[2];
+  uint8_t device = frame[2];
+  uint8_t operation = (len > 3) ? frame[3] : 0;
   uint8_t response[12];
   uint16_t resp_len;
 
   switch (cmd) {
-  case CMD_AGIT_STATUS: // 0x20
-    if (inst == INST_QUERY) {
+  case CMD_QUERY_STATUS: { // 0x20
+    if (operation == OP_QUERY) {
       uint8_t running, state, err;
       agitator_get_status(&running, &state, &err);
 
       uint8_t data[3] = {running, state, err};
-      resp_len =
-          protocol_build_frame(CMD_AGIT_STATUS, INST_QUERY, data, 3, response);
+      resp_len = protocol_build_frame(CMD_QUERY_STATUS, DEVICE_AGITATOR, data,
+                                      3, response);
       comm_send_response(response, resp_len);
     }
     break;
+  }
 
-  case CMD_AGIT_PARAM: // 0x21 - Reversed ??
-    if (inst == INST_QUERY) {
+  case CMD_QUERY_SET_PARAM: { // 0x21 - Reversed ??
+    if (operation == OP_QUERY) {
       uint8_t data[1] = {0x00};
-      resp_len =
-          protocol_build_frame(CMD_AGIT_PARAM, INST_QUERY, data, 1, response);
+      resp_len = protocol_build_frame(CMD_QUERY_SET_PARAM, DEVICE_AGITATOR,
+                                      data, 1, response);
       comm_send_response(response, resp_len);
-    } else if (inst == INST_SET) {
+    } else if (operation == OP_SET) {
       uint8_t data[1] = {RESP_SUCCESS};
-      resp_len =
-          protocol_build_frame(CMD_AGIT_PARAM, INST_SET, data, 1, response);
+      resp_len = protocol_build_frame(CMD_QUERY_SET_PARAM, DEVICE_AGITATOR,
+                                      data, 1, response);
       comm_send_response(response, resp_len);
     }
     break;
+  }
+  case CMD_START_CONTROL: { // 0x22
+    if (len >= 5) {
+      uint8_t duration_sec = frame[3];
+      uint32_t duration_ms = duration_sec * 1000;
+      uint8_t result = agitator_start(duration_ms);
 
-  case CMD_AGIT_CONTROL: // 0x22
-    if (inst == INST_SET && len >= 6) {
-      uint8_t duration = frame[3];
-      uint32_t duration_ms = (uint32_t)duration * 1000;
-      uint8_t success = agitator_start(duration_ms);
-
-      uint8_t data[1] = {success ? RESP_SUCCESS : RESP_FAILED};
-      resp_len =
-          protocol_build_frame(CMD_AGIT_CONTROL, INST_SET, data, 1, response);
-          comm_send_response(response, resp_len);
+      uint8_t data[1] = {result ? RESP_SUCCESS : RESP_FAILED};
+      resp_len = protocol_build_frame(CMD_START_CONTROL, DEVICE_AGITATOR, data,
+                                      1, response);
+      comm_send_response(response, resp_len);
     }
+    break;
+  }
+  default:
     break;
   }
 }

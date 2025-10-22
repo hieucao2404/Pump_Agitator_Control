@@ -12,8 +12,7 @@ extern "C" {
   =========================
 */
 
-#define INST_QUERY 0x55 // doc du lieu tu may (slave)
-#define INST_SET 0xAA   // Set data cho may (slave)
+
 
 /*=========================
   FRAME MARKERS
@@ -34,28 +33,41 @@ BUFFER SIZE
   COMMAND CODES - PUMP (0x10 - 1x1F
   ==========================*/
 
-#define CMD_PUMP_STATUS 0x10   // doc trang thai cua may bom
-#define CMD_PUMP_PARAM 0x11    // doc / set may bom 
-#define CMD_PUMP_DISPENSE 0x12 // khoi dong may bom
 
-/**======================
-    COMMAND CODES - AGITATOR (0x20 - 0x2F)
-  ======================
-*/
+// /**======================
+//     COMMAND CODES - AGITATOR (0x20 - 0x2F)
+//   ======================
+// */
 
-#define CMD_AGIT_STATUS 0x20  // doc trang thai may khuya
-#define CMD_AGIT_PARAM 0x21   // doc va set may khuay
-#define CMD_AGIT_CONTROL 0x22 // start agitator motor
 
-/**============================
-  COMMAND CODES - SYSTEM(0x30 - 0x3F)
-  ============================
+// /**============================
+//   COMMAND CODES - SYSTEM(0x30 - 0x3F)
+//   ============================
+//    */
+
+
+#define CMD_QUERY_STATUS 0x10 //Query any device status
+#define CMD_QUERY_SET_PARAM 0x11 // Query/Set parameters or reset
+#define CMD_START_CONTROL 0x12 // Start/Control operation
+#define CMD_EMERGENCY_STOP 0x32 // Emergency stop
+
+
+/*===============================
+  DEVICE TARGET CODES
+  ==============================
    */
 
-#define CMD_SYSTEM_STATUS 0x30    /**< Query system status */
-#define CMD_SYSTEM_RESET 0x31     /**< Set system parameters */
-#define CMD_EMERGENCY_STOP 0x32 /**< Emergency stop all */
+#define DEVICE_PUMP 0x01 // Tartget: Pump 
+#define DEVICE_AGITATOR 0x02 // Agitator system
+#define DEVICE_ALL 0x03 // Target: All devices(uinified status)
+#define DEVICE_SYSTEM 0x04 // Target: System-level operations
 
+/* =============================
+  OPERATION TYPE CODES
+  =======================*/
+#define OP_QUERY 0x55 // read operation
+#define OP_SET 0xAA // Write/Set operation
+#define OP_RESET 0xCC // Reset operation
 /**
 ============================
   RESPONSE CODE
@@ -102,7 +114,7 @@ MOTOR DEFINITIONS
   =====================*/
   uint8_t protocol_calc_checksum(uint8_t *data, uint16_t len);
   uint8_t protocol_validate_frame(uint8_t *frame, uint16_t len);
-  uint16_t protocol_build_frame(uint8_t cmd, uint8_t inst, uint8_t *data, uint8_t data_len, uint8_t *out_frame);
+  uint16_t protocol_build_frame(uint8_t cmd, uint8_t device, uint8_t *data, uint8_t data_len, uint8_t *out_frame);
 
   #ifdef __cplusplus
 }

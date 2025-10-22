@@ -19,8 +19,7 @@ void system_handle_command(uint8_t *frame, uint16_t len);
 void system_emergency_stop(void);
 
 /* Get unified system status*/
-void system_get_status(uint8_t *pump_status, uint8_t *agitator_status,
-                       uint8_t *system_state, uint8_t *error_code);
+void system_handle_unified_status(uint8_t *frame, uint16_t len);
 
 /* Reset/initialize all subsystems*/
 void system_reset(void);

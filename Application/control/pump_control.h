@@ -54,10 +54,10 @@ extern "C" {
     void pump_get_status(uint8_t *status_bits, uint8_t *sys_state, uint8_t *err_code);
 
     //Set dinh luong cho may bom
-    uint8_t pump_set_calibration(uint8_t motor_id, float sec_per_100ml);
+    uint8_t pump_set_calibration(uint16_t *cal_values);
 
     // Xac nhan dinh luong cho may bom
-    uint8_t pump_get_calibration(uint8_t motor_id, float *sec_per_100ml);
+    void pump_get_calibration(uint16_t *cal_values);
 
   #ifdef __cplusplus
 

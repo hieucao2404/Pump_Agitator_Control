@@ -15,7 +15,7 @@ static uint8_t rx_buffer[RX_BUFFER_SIZE];
 static uint16_t rx_index = 0;
 static volatile uint8_t data_ready = 0;
 
-static uint8_t usb_connected = 0;
+static uint8_t usb_connected =  0;
 static uint32_t usb_connect_tick = 0;
 
 void comm_set_usb_connected(uint8_t connected) {
@@ -65,7 +65,7 @@ uint8_t protocol_validate_frame(uint8_t *frame, uint16_t len) {
 /*
 Cat nho hex code de phan tich
 */
-uint16_t protocol_build_frame(uint8_t cmd, uint8_t inst, uint8_t *data,
+uint16_t protocol_build_frame(uint8_t cmd, uint8_t device, uint8_t *data,
                               uint8_t data_len, uint8_t *out_frame) {
   uint16_t idx = 0;
 
@@ -77,7 +77,7 @@ uint16_t protocol_build_frame(uint8_t cmd, uint8_t inst, uint8_t *data,
   out_frame[idx++] = total_len; // dat ngay sau command code
 
   // sau do dai tong la cac lenh thuc thi
-  out_frame[idx++] = inst;
+  out_frame[idx++] = device;
 
   // luu tru data cho checksum
   for (uint8_t i = 0; i < data_len; i++) {
@@ -169,19 +169,48 @@ void comm_process_frames(void) {
 
   // Check what this command will execute
 
-  if (cmd >= 0x10 && cmd <= 0x1F) {
-     pump_handle_command(rx_buffer, frame_len);
-  } else if (cmd >= 0x20 && cmd <= 0x2F) {
-    agitator_handle_command(rx_buffer, frame_len);
-  } else if (cmd >= 0x30 && cmd <= 0x3F) {
-     system_handle_command(rx_buffer, frame_len);
+  uint8_t device_target = rx_buffer[2];
+
+  switch(cmd) {
+    case CMD_QUERY_STATUS: //0x10
+     if (device_target == DEVICE_PUMP) {
+      pump_handle_command(rx_buffer, frame_len);
+     } else  if( device_target == DEVICE_AGITATOR) {
+      agitator_handle_command(rx_buffer, frame_len); 
+     } else if(device_target == DEVICE_ALL) {
+      system_handle_unified_status(rx_buffer, frame_len);
+     }
+     break;
+    
+    case CMD_QUERY_SET_PARAM:
+     if(device_target == DEVICE_PUMP) {
+        pump_handle_command(rx_buffer, frame_len);
+     }
+     break;
+
+     case CMD_START_CONTROL:  // 0x12
+    if(device_target == DEVICE_PUMP) {
+        pump_handle_command(rx_buffer, frame_len);
+    } else if(device_target == DEVICE_AGITATOR) {
+        agitator_handle_command(rx_buffer, frame_len);
+    }
+    break;
+
+    case CMD_EMERGENCY_STOP: // 0x32
+     system_emergency_stop();
+     //send success response
+     uint8_t response[8];
+     uint8_t data[1] = {RESP_SUCCESS};
+    uint16_t resp_len = protocol_build_frame(CMD_EMERGENCY_STOP, 0, data, 1, response);
+      comm_send_response(response, resp_len);
+      break;
   }
 
+  //clean up buffer
   memmove(rx_buffer, rx_buffer + frame_len, rx_index - frame_len);
   rx_index -= frame_len;
 
-  if (rx_index > 0)
-    data_ready = 1;
+  if(rx_index > 0) data_ready = 1;
 }
 
 /*
