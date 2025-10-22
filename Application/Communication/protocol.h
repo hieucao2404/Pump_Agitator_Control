@@ -35,7 +35,7 @@ BUFFER SIZE
   ==========================*/
 
 #define CMD_PUMP_STATUS 0x10   // doc trang thai cua may bom
-#define CMD_PUMP_PARAM 0x11    // doc / set may bom ---- CHUA CLEAR
+#define CMD_PUMP_PARAM 0x11    // doc / set may bom 
 #define CMD_PUMP_DISPENSE 0x12 // khoi dong may bom
 
 /**======================
@@ -90,12 +90,12 @@ MOTOR DEFINITIONS
 #define MOTOR_ID_2 0x02
 #define MOTOR_ID_3 0x03
 
-#define MIN_VOLUME_ML 10
-#define MAX_VOLUME_ML 500
+// #define MIN_VOLUME_ML 10
+// #define MAX_VOLUME_ML 500
 
 
-#define MIN_AGIT_DURATION 100 // it nhat 0.1s
-#define MAX_AGIT_DURATION 600000 // nhieu nhat 10p
+// #define MIN_AGIT_DURATION 100 // it nhat 0.1s
+// #define MAX_AGIT_DURATION 600000 // nhieu nhat 10p
 
 /*=========================
   FUNCTION PROTOTYPES

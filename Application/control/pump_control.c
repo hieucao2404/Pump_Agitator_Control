@@ -80,16 +80,16 @@ void pump_task(void) {
 }
 
 /* start motor*/
-uint8_t pump_start_motor(uint8_t motor_id, uint16_t volume_ml) {
+uint8_t pump_start_motor(uint8_t motor_id, uint8_t volume_ml) {
   if (motor_id < 1 || motor_id > NUM_PUMPS) {
     error_code = ERR_INVALID_PARAM;
     return 0;
   }
 
-  if (volume_ml < MIN_VOLUME_ML || volume_ml > MAX_VOLUME_ML) {
-    error_code = ERR_INVALID_PARAM;
-    return 0;
-  }
+  // if (volume_ml < MIN_VOLUME_ML || volume_ml > MAX_VOLUME_ML) {
+  //   error_code = ERR_INVALID_PARAM;
+  //   return 0;
+  // }
 
   int idx = motor_id - 1;
   if (motors[idx].running) {
@@ -133,13 +133,11 @@ void pump_stop_all(void) {
 }
 
 /* Get status */
-void pump_get_status(uint8_t *status_bits, uint8_t *sys_state,
+void pump_get_status(uint8_t *status_arry, uint8_t *sys_state,
                      uint8_t *err_code) {
-  *status_bits = 0;
+  
   for (int i = 0; i < NUM_PUMPS; i++) {
-    if (motors[i].running) {
-      *status_bits |= (1 << i);
-    }
+      status_arry[i] = motors[i].running ? 1 : 0;
   }
   *sys_state = system_state;
   *err_code = error_code;
@@ -172,27 +170,38 @@ void pump_handle_command(uint8_t *frame, uint16_t len) {
   switch (cmd) {
   case CMD_PUMP_STATUS:
     if (inst == INST_QUERY) {
-      uint8_t status, state, err;
-      pump_get_status(&status, &state, &err);
-      uint8_t data[3] = {status, state, err};
-      resp_len =
-          protocol_build_frame(CMD_PUMP_STATUS, INST_QUERY, data, 3, response);
+      uint8_t status[NUM_PUMPS];
+      uint8_t state, err;
+      pump_get_status(status, &state, &err);
+      
+      //build data dynamically
+      uint8_t data[NUM_PUMPS + 2]; //automatic sizing 
+
+      //copy status
+      for(int i = 0; i < NUM_PUMPS; i++) {
+        data[i] = status[i];
+      }
+      // them system state va error
+      data[NUM_PUMPS] = state;
+      data[NUM_PUMPS + 1] = err;
+      resp_len = protocol_build_frame(CMD_PUMP_STATUS, INST_QUERY, 
+                                      data, NUM_PUMPS + 2, response);
       comm_send_response(response, resp_len);
-    }
+      }
     break;
 
   case CMD_PUMP_PARAM:
     if (inst == INST_QUERY) {
-      uint8_t data[6];
+      uint8_t data[NUM_PUMPS * 2];
       for (int i = 0; i < NUM_PUMPS; i++) {
         uint16_t cal = (uint16_t)(motor_config[i].sec_per_100ml * 10);
         data[i * 2] = (cal >> 8) & 0xFF;
         data[i * 2 + 1] = cal & 0xFF;
       }
       resp_len =
-          protocol_build_frame(CMD_PUMP_PARAM, INST_QUERY, data, 6, response);
+          protocol_build_frame(CMD_PUMP_PARAM, INST_QUERY, data, NUM_PUMPS * 2, response);
       comm_send_response(response, resp_len);
-    } else if (inst == INST_SET && len >= 11) {
+    } else if (inst == INST_SET && len >=(3 + NUM_PUMPS * 2 + 2)) {
       for (int i = 0; i < NUM_PUMPS; i++) {
         uint16_t cal = (frame[3 + i * 2] << 8) | frame[4 + i * 2];
         motor_config[i].sec_per_100ml = cal / 10.0f;
@@ -205,9 +214,9 @@ void pump_handle_command(uint8_t *frame, uint16_t len) {
     break;
 
   case CMD_PUMP_DISPENSE: /* 0x12 */
-    if (inst == INST_SET && len >= 8) {
+    if (inst == INST_SET && len >= 7) {
       uint8_t motor_id = frame[3];
-      uint16_t volume = (frame[4] << 8) | frame[5];
+      uint8_t volume = frame[4];
       uint8_t success = pump_start_motor(motor_id, volume);
       uint8_t data[2] = {motor_id, success ? RESP_SUCCESS : RESP_FAILED};
       resp_len =

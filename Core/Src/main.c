@@ -107,7 +107,7 @@ int main(void) {
     comm_process_frames();
     pump_task();
     agitator_task();
-    HAL_Delay(10);
+   // HAL_Delay(10);
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */

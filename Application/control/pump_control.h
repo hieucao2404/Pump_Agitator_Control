@@ -45,7 +45,7 @@ extern "C" {
     // xu ly len nhan vao
     void pump_handle_command(uint8_t *frame, uint16_t len);
     // chay motor duoc chi dinh
-    uint8_t pump_start_motor(uint8_t motor_id, uint16_t volume_ml);
+    uint8_t pump_start_motor(uint8_t motor_id, uint8_t volume_ml);
     // Stop may bom dc chi dinh
     void pump_stop_motor(uint8_t motor_id);
     // Dung tat ca 

@@ -65,11 +65,11 @@ void agitator_task(void) {
 
 // start agitator
 uint8_t agitator_start(uint32_t duration_ms) {
-  // gioi han thoi gian chay cua may khuya (min and max)
-   if (duration_ms < MIN_AGIT_DURATION || duration_ms > MAX_AGIT_DURATION) {
-        error_code = ERR_INVALID_PARAM; 
-        return 0;
-    }
+  // // gioi han thoi gian chay cua may khuya (min and max)
+  //  if (duration_ms < MIN_AGIT_DURATION || duration_ms > MAX_AGIT_DURATION) {
+  //       error_code = ERR_INVALID_PARAM; 
+  //       return 0;
+  //   }
 
   if (agitator.running){
     error_code = ERR_SYSTEM_BUSY;
@@ -113,7 +113,7 @@ void agitator_handle_command(uint8_t *frame, uint16_t len) {
 
       uint8_t data[3] = {running, state, err};
       resp_len =
-          protocol_build_frame(CMD_AGIT_STATUS, INST_QUERY, data, 2, response);
+          protocol_build_frame(CMD_AGIT_STATUS, INST_QUERY, data, 3, response);
       comm_send_response(response, resp_len);
     }
     break;
@@ -133,9 +133,10 @@ void agitator_handle_command(uint8_t *frame, uint16_t len) {
     break;
 
   case CMD_AGIT_CONTROL: // 0x22
-    if (inst == INST_SET && len >= 7) {
-      uint16_t duration = (frame[3] << 8) | frame[4];
-      uint8_t success = agitator_start(duration);
+    if (inst == INST_SET && len >= 6) {
+      uint8_t duration = frame[3];
+      uint32_t duration_ms = (uint32_t)duration * 1000;
+      uint8_t success = agitator_start(duration_ms);
 
       uint8_t data[1] = {success ? RESP_SUCCESS : RESP_FAILED};
       resp_len =
