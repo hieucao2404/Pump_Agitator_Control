@@ -64,11 +64,32 @@ else()
     message(STATUS "No Application sources found in ${CMAKE_SOURCE_DIR}/Application")
 endif()
 
+# Add Core C sources (Core/Src)
+file(GLOB_RECURSE CORE_SOURCES
+    ${CMAKE_SOURCE_DIR}/Core/Src/*.c
+    ${CMAKE_SOURCE_DIR}/Core/Src/*.s
+)
+list(REMOVE_ITEM CORE_SOURCES
+    ${CMAKE_SOURCE_DIR}/Core/Src/main.c
+    ${CMAKE_SOURCE_DIR}/Core/Src/system_stm32f1xx.c
+    ${CMAKE_SOURCE_DIR}/startup_stm32f103xb.s
+)
+if(CORE_SOURCES)
+    message(STATUS "Found Core sources: ${CORE_SOURCES}")
+    target_sources(${CMAKE_PROJECT_NAME} PRIVATE ${CORE_SOURCES})
+else()
+    message(STATUS "No Core sources found in ${CMAKE_SOURCE_DIR}/Core/Src")
+endif()
+
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/Application
     ${CMAKE_SOURCE_DIR}/Application/Communication
     ${CMAKE_SOURCE_DIR}/Application/control
     ${CMAKE_SOURCE_DIR}/Application/system
+    ${CMAKE_SOURCE_DIR}/Core/Src/Communication
+    ${CMAKE_SOURCE_DIR}/Core/Src/control
+    ${CMAKE_SOURCE_DIR}/Core/Src
+    ${CMAKE_SOURCE_DIR}/Core/Src/system
 )
 
 # Add project symbols (macros)

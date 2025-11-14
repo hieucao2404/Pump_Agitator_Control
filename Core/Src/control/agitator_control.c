@@ -58,6 +58,16 @@ void agitator_task(void) {
     if (elapsed >= agitator.duration_ms) {
       agitator_hardware_off();
       agitator.running = 0;
+      // --- MODIFICATION START ---
+      // Notify host that the agitator task is complete
+      uint8_t response[10]; // Small buffer for the response
+      uint8_t data[1]; // No payload needed
+
+      // Build the new frame using the new command code
+      uint16_t resp_len = protocol_build_frame(
+          CMD_TASK_COMPLETED, DEVICE_AGITATOR, data, 0, response); // 0 data length
+      comm_send_response(response, resp_len);
+      // --- MODIFICATION END ---
     }
   }
   system_state = agitator.running ? SYS_STATE_RUNNING : SYS_STATE_STANDBY;

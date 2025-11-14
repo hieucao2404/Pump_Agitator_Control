@@ -73,6 +73,18 @@ void pump_task(void) {
       if (elapsed >= motors[i].duration_ms) {
         motor_hardware_off(i + 1);
         motors[i].running = 0;
+
+        // ---- MODIFICATION START ---
+        // Notify host that this motor's task is complete
+        uint8_t response[10]; //small buffer for the response
+        //The data payload will be the motor ID that just finished
+        uint8_t data[1] = {motors[i].motor_id};
+
+        //Build the new frame using the new command code
+        uint16_t resp_len = protocol_build_frame(
+            CMD_TASK_COMPLETED, DEVICE_PUMP, data, 1, response);
+        comm_send_response(response, resp_len);
+        // --- MODIFICATION END ---
       }
     }
   }

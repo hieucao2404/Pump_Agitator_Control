@@ -50,6 +50,13 @@ BUFFER SIZE
 #define CMD_QUERY_SET_PARAM 0x11 // Query/Set parameters or reset
 #define CMD_START_CONTROL 0x12 // Start/Control operation
 #define CMD_EMERGENCY_STOP 0x32 // Emergency stop
+/**
+  -------------- MODIFICATION START -------------------
+  @brief Auto-notification sent from device to host when a task finishes.
+  - DEVICE_PUMP: Paylad is 1 byte
+  - DEVICE AGITATOR: Paylaid is 0  byte
+ */
+#define CMD_TASK_COMPLETED 0x40
 
 
 /*===============================
