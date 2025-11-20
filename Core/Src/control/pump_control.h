@@ -3,6 +3,9 @@ Pump Controll
 - PB7: Pump motor 1
 - PB8: Pump motor 2
 - PB9: Pump motor 3
+- PB12: Pump motor 4  <-- NEW
+- PB13: Pump motor 5  <-- NEW
+- PB14: Pump motor 6  <-- NEW
  */
 
 #ifndef PUMP_CONTROL_H
@@ -19,7 +22,7 @@ extern "C" {
     CONFIGURATION
     ===================== */
 
-    #define NUM_PUMPS 3
+    #define NUM_PUMPS 6
 
     //** Pump motor state struct */
     typedef struct {

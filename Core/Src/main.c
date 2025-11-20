@@ -191,7 +191,8 @@ static void MX_GPIO_Init(void) {
   /*Configure GPIO pins : Agitator_Relay_Pin Pump_Motor_1_Pin Pump_Motor_2_Pin
    * Pump_Motor_3_Pin */
   GPIO_InitStruct.Pin = Agitator_Relay_Pin | Pump_Motor_1_Pin |
-                        Pump_Motor_2_Pin | Pump_Motor_3_Pin;
+                        Pump_Motor_2_Pin | Pump_Motor_3_Pin | Pump_Motor_4_Pin | Pump_Motor_5_Pin |
+                        Pump_Motor_6_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;

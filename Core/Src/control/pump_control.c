@@ -12,6 +12,11 @@
 #define MOTOR1_PIN GPIO_PIN_7
 #define MOTOR2_PIN GPIO_PIN_8
 #define MOTOR3_PIN GPIO_PIN_9
+// Add pins for pumps 4, 5, 6
+// Make sure to configure these pins in MX_GPIO_Init()
+#define MOTOR4_PIN GPIO_PIN_12 
+#define MOTOR5_PIN GPIO_PIN_13
+#define MOTOR6_PIN GPIO_PIN_14
 
 static PumpMotorState_t motors[NUM_PUMPS];
 static uint8_t system_state = SYS_STATE_STANDBY;
@@ -20,7 +25,11 @@ static uint8_t error_code = ERR_NONE;
 static PumpMotorConfig_t motor_config[NUM_PUMPS] = {
     {3.0f, MOTOR_GPIO_PORT, MOTOR1_PIN},
     {8.0f, MOTOR_GPIO_PORT, MOTOR2_PIN},
-    {12.0f, MOTOR_GPIO_PORT, MOTOR3_PIN}};
+    {12.0f, MOTOR_GPIO_PORT, MOTOR3_PIN},
+    {3.0f, MOTOR_GPIO_PORT, MOTOR4_PIN},  // Assumed calibration
+    {8.0f, MOTOR_GPIO_PORT, MOTOR5_PIN},  // Assumed calibration
+    {12.0f, MOTOR_GPIO_PORT, MOTOR6_PIN}
+  };// Assumed calibration};
 
 /* Hardware control */
 static void motor_hardware_on(uint8_t motor_id) {
@@ -29,6 +38,7 @@ static void motor_hardware_on(uint8_t motor_id) {
   const PumpMotorConfig_t *cfg =
       &motor_config[motor_id - 1]; // motorid - 1 theo gia tri cua array
   HAL_GPIO_WritePin(cfg->port, cfg->pin, GPIO_PIN_SET);
+  
 }
 
 static void motor_hardware_off(uint8_t motor_id) {
@@ -108,6 +118,11 @@ uint8_t pump_start_motor(uint8_t motor_id, uint8_t volume_ml) {
     error_code = ERR_SYSTEM_BUSY;
     return 0;
   }
+    // Allow 0 volume to just return success without running
+  if (volume_ml == 0) {
+      error_code = ERR_NONE;
+      return 1; // Success (by not running)
+  }
 
   uint32_t duration = calculate_duration_ms(motor_id, volume_ml);
   if (duration == 0) {
@@ -179,7 +194,7 @@ void pump_handle_command(uint8_t *frame, uint16_t len) {
   uint8_t cmd = frame[0];
   uint8_t device = frame[2];
   uint8_t operation = (len > 3) ? frame[3] : 0;
-  uint8_t response[16];
+  uint8_t response[NUM_PUMPS * 2 + 8];
   uint16_t resp_len;
 
   switch (cmd) {
@@ -222,7 +237,9 @@ void pump_handle_command(uint8_t *frame, uint16_t len) {
       comm_send_response(response, resp_len);
     } else if (operation == OP_SET) {
       // Set calibration
-      if (len >= 10) {
+     // --- MODIFICATION ---
+      // Check length for 6 pumps (5 base + 6*2 data = 17 bytes)
+      if (len >= (5 + NUM_PUMPS * 2)) { 
         uint16_t cal_values[NUM_PUMPS];
         for (int i = 0; i < NUM_PUMPS; i++) {
           cal_values[i] = (frame[4 + i * 2] << 8) | frame[5 + i * 2];
@@ -245,6 +262,39 @@ void pump_handle_command(uint8_t *frame, uint16_t len) {
       uint8_t data[2] = {motor_id, success ? RESP_SUCCESS : RESP_FAILED};
       resp_len = protocol_build_frame(CMD_START_CONTROL, DEVICE_PUMP, data, 2,
                                       response);
+      comm_send_response(response, resp_len);
+    }
+    break;
+  }
+
+  // -- Modification for running multiple pumps
+  // -- MODIFICATION for running 6 pumps
+  case CMD_START_MULTI_PUMP:{ /* 0x13*/
+    //Expects 11 bytes: [CMD][LEN][DEV][VOL1]..[VOL6][CS][END]
+    // 5 base bytes + NUM_PUMPS (6) data bytes = 11
+    if(len >= (5 + NUM_PUMPS)) { 
+      uint8_t results[NUM_PUMPS]; // Array to store success/fail
+
+      for(int i = 0; i < NUM_PUMPS; i++) {
+        // frame[3] = Vol_P1
+        // frame[4] = Vol_P2
+        // ...
+        // frame[8] = Vol_P6
+        uint8_t volume = frame[3 + i];
+
+        if(volume > 0) {
+          //Attempt to start the motor
+          uint8_t success = pump_start_motor(i + 1, volume); // i+1 = motor_id
+          results[i] = success ? RESP_SUCCESS : RESP_FAILED;
+        } else {
+          //volume is 0, so we succeed by not running it
+          results[i] = RESP_SUCCESS;
+        }
+      }
+
+      //Send a response payload with all 6 results
+      resp_len = protocol_build_frame(CMD_START_MULTI_PUMP, DEVICE_PUMP,
+                                      results, NUM_PUMPS, response);
       comm_send_response(response, resp_len);
     }
     break;
